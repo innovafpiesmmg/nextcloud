@@ -1,34 +1,49 @@
-# Instalador de Nextcloud desde GitHub
+# Instalador de Nextcloud para contenedor LXC en Proxmox
 
-Este script permite descargar e instalar Nextcloud directamente desde el repositorio de GitHub [innovafpiesmmg/nextcloud](https://github.com/innovafpiesmmg/nextcloud). La herramienta está diseñada para facilitar la instalación de Nextcloud en servidores web, verificando los requisitos necesarios y proporcionando una guía paso a paso.
+Este script está diseñado específicamente para instalar Nextcloud en un contenedor LXC en Proxmox con Ubuntu 20.04 completamente nuevo, sin actualizaciones ni dependencias instaladas. Descarga Nextcloud desde el repositorio de GitHub [innovafpiesmmg/nextcloud](https://github.com/innovafpiesmmg/nextcloud) y configura todo lo necesario para su funcionamiento.
 
 ## Características
 
-- 📥 Descarga Nextcloud directamente desde el repositorio oficial en GitHub
-- 🔍 Verifica automáticamente los requisitos del sistema y dependencias
+- 📥 Descarga Nextcloud directamente desde el repositorio en GitHub
+- 🔍 Verifica e instala automáticamente las dependencias necesarias en Ubuntu 20.04
 - 🌐 Permite personalizar el idioma de la instalación
-- 🚀 Incluye indicador de progreso durante la descarga
+- 🚀 Incluye indicador de progreso durante la descarga e instalación
 - 🔄 Permite seleccionar versiones específicas (tags) del repositorio
 - 🛠️ Configura automáticamente los permisos de archivos y directorios
-- 📋 Proporciona instrucciones detalladas post-instalación
+- 📋 Proporciona instrucciones detalladas adaptadas al entorno Proxmox LXC
 
-## Requisitos previos
+## Preparación del contenedor LXC en Proxmox
 
-Para utilizar este script, necesitará:
+1. Cree un nuevo contenedor LXC en Proxmox con Ubuntu 20.04
+2. Configuración recomendada para el contenedor:
+   - Al menos 2GB de RAM
+   - Al menos 8GB de espacio en disco
+   - Acceso a la red con dirección IP fija
+   - Privileged container (para algunas funcionalidades avanzadas)
 
-- Sistema operativo Linux/Unix
-- Git instalado
-- Acceso a Internet para descargar desde GitHub
-- Permisos para ejecutar scripts bash
+## Requisitos previos en el contenedor
 
-## Instalación
+El script instalará automáticamente las siguientes dependencias si no están presentes:
 
-1. Descargue el script `instalar_nextcloud.sh`
-2. Otorgue permisos de ejecución:
+- git
+- curl o wget
+- unzip
+- PHP y sus extensiones necesarias
+- Apache2 o Nginx
+- MariaDB/MySQL
+
+## Instalación en el contenedor LXC
+
+1. Conéctese al contenedor por SSH o console desde Proxmox
+2. Descargue el script (puede usar wget si no está instalado, el script lo detectará):
+   ```bash
+   wget https://raw.githubusercontent.com/tu-usuario/tu-repo/main/instalar_nextcloud.sh
+   ```
+3. Otorgue permisos de ejecución:
    ```bash
    chmod +x instalar_nextcloud.sh
    ```
-3. Ejecute el script:
+4. Ejecute el script:
    ```bash
    ./instalar_nextcloud.sh
    ```
@@ -40,56 +55,77 @@ Durante la ejecución, el script le permitirá personalizar:
 - Directorio de instalación (por defecto: `nextcloud`)
 - Idioma predeterminado (por defecto: `es`)
 - Versión específica a instalar (tag/rama del repositorio)
+- Selección del servidor web (Apache o Nginx)
+- Configuración básica de la base de datos
 
-## Requisitos del sistema para Nextcloud
+## Configuración de red y acceso a través de Cloudflare
 
-- PHP 7.4 o superior con las siguientes extensiones:
-  - ctype
-  - curl
-  - dom
-  - GD
-  - JSON
-  - mbstring
-  - posix
-  - SimpleXML
-  - XMLWriter
-  - zip
-  - zlib
-  
-- Servidor web (Apache/Nginx)
-- Base de datos (MySQL/MariaDB, PostgreSQL o SQLite)
-- Al menos 512MB de RAM recomendado
+Para acceder a Nextcloud de forma segura mediante un túnel de Cloudflare:
 
-## Instrucciones post-instalación
+1. Asegúrese de que el contenedor tiene acceso a Internet (salida)
+2. Configure el túnel de Cloudflare siguiendo estos pasos:
+   - Cree una cuenta en Cloudflare (si no tiene una)
+   - Configure un dominio en Cloudflare
+   - Cree un túnel en la sección "Zero Trust" > "Access" > "Tunnels"
+   - Instale el conector Cloudflare en el contenedor LXC
+   - Configure el túnel para apuntar al servicio Nextcloud (puerto 80/443)
 
-Después de ejecutar el script, deberá:
+3. Beneficios de usar un túnel de Cloudflare:
+   - Certificado SSL/TLS automático proporcionado por Cloudflare
+   - No requiere abrir puertos en el router o firewall
+   - Protección contra ataques DDoS
+   - Control de acceso adicional (opcional)
 
-1. Mover el directorio de instalación a la raíz de su servidor web
-2. Configurar su servidor web para servir Nextcloud
-3. Configurar una base de datos para Nextcloud
-4. Acceder al instalador web de Nextcloud a través de su navegador
-5. Completar la configuración siguiendo las instrucciones en pantalla
+## Pasos post-instalación para Cloudflare Tunnel
 
-## Solución de problemas
+1. Instalar el conector de Cloudflare en el contenedor LXC:
+   ```bash
+   # Descargar el binario de cloudflared
+   wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+   # Instalar el paquete
+   dpkg -i cloudflared-linux-amd64.deb
+   # Verificar la instalación
+   cloudflared --version
+   ```
 
-Si encuentra algún problema durante la instalación:
+2. Autenticar y crear el túnel:
+   ```bash
+   # Iniciar sesión en Cloudflare
+   cloudflared tunnel login
+   # Crear un nuevo túnel
+   cloudflared tunnel create nextcloud-tunnel
+   # Configurar el túnel (reemplazar UUID con el ID de su túnel)
+   cat << EOF > ~/.cloudflared/config.yml
+   tunnel: UUID-DE-SU-TUNEL
+   credentials-file: /root/.cloudflared/UUID-DE-SU-TUNEL.json
+   ingress:
+     - hostname: nextcloud.su-dominio.com
+       service: http://localhost:80
+     - service: http_status:404
+   EOF
+   ```
 
-1. Verifique que todos los requisitos previos estén instalados
-2. Asegúrese de tener una conexión a Internet estable
-3. Compruebe que tiene permisos suficientes en el directorio de destino
-4. Revise los logs de error del servidor web después de la instalación
+3. Configurar el servicio para que se inicie automáticamente:
+   ```bash
+   cloudflared service install
+   ```
 
-## Contribuir
+3. Optimización para LXC:
+   - Ajuste los límites de memoria y CPU en Proxmox según la carga
+   - Configure copias de seguridad del contenedor a través de Proxmox
 
-Si desea contribuir a este script, puede:
+## Solución de problemas específicos en LXC
 
-1. Crear un fork del repositorio
-2. Realizar sus cambios
-3. Enviar un pull request
+1. Problemas de permisos:
+   - El script configura los permisos adecuados, pero puede necesitar ajustes según la configuración de su contenedor LXC
+   - Utilice `lxc-attach` desde el host Proxmox para verificar los logs si el contenedor no es accesible
 
-## Licencia
+2. Problemas de red:
+   - Verifique que el contenedor tiene acceso a Internet durante la instalación
+   - Compruebe que los puertos no están bloqueados por el firewall de Proxmox
 
-Este script se distribuye bajo la licencia MIT. Consulte el archivo LICENSE para más detalles.
+3. Limitaciones de recursos:
+   - Si Nextcloud funciona lentamente, aumente los recursos asignados al contenedor desde la interfaz de Proxmox
 
 ## Créditos
 
