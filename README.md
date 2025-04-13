@@ -21,32 +21,53 @@ Este script está diseñado específicamente para instalar Nextcloud en un conte
    - Acceso a la red con dirección IP fija
    - Privileged container (para algunas funcionalidades avanzadas)
 
-## Requisitos previos en el contenedor
+## Instrucciones paso a paso para instalar Nextcloud
 
-El script instalará automáticamente las siguientes dependencias si no están presentes:
+### Paso 1: Actualizar el sistema e instalar dependencias básicas
 
-- git
-- curl o wget
-- unzip
-- PHP y sus extensiones necesarias
-- Apache2 o Nginx
-- MariaDB/MySQL
+```bash
+# Conéctese al contenedor por SSH o consola desde Proxmox
+# Luego ejecute estos comandos:
 
-## Instalación en el contenedor LXC
+# Actualizar la lista de paquetes
+apt update
 
-1. Conéctese al contenedor por SSH o console desde Proxmox
-2. Descargue el script (puede usar wget si no está instalado, el script lo detectará):
-   ```bash
-   wget https://raw.githubusercontent.com/tu-usuario/tu-repo/main/instalar_nextcloud.sh
-   ```
-3. Otorgue permisos de ejecución:
-   ```bash
-   chmod +x instalar_nextcloud.sh
-   ```
-4. Ejecute el script:
-   ```bash
-   ./instalar_nextcloud.sh
-   ```
+# Instalar git (necesario para descargar el script)
+apt install -y git
+```
+
+### Paso 2: Descargar el script de instalación desde GitHub
+
+```bash
+# Clonar el repositorio de GitHub
+git clone https://github.com/innovafpiesmmg/nextcloud.git
+
+# Entrar al directorio del repositorio
+cd nextcloud
+
+# Si solo quiere descargar el script de instalación sin clonar todo el repositorio:
+wget -O instalar_nextcloud.sh https://raw.githubusercontent.com/innovafpiesmmg/nextcloud/main/instalar_nextcloud.sh
+```
+
+### Paso 3: Ejecutar el script de instalación
+
+```bash
+# Dar permisos de ejecución al script
+chmod +x instalar_nextcloud.sh
+
+# Ejecutar el script de instalación
+./instalar_nextcloud.sh
+```
+
+### Paso 4: Seguir las instrucciones interactivas del script
+
+El script le guiará a través de las siguientes opciones:
+
+1. Personalización de la instalación (directorio, idioma, versión)
+2. Instalación automática de dependencias necesarias
+3. Descarga de Nextcloud desde GitHub
+4. Configuración básica de Nextcloud
+5. Instalación opcional de Cloudflare Tunnel para acceso seguro
 
 ## Opciones de personalización
 
