@@ -1,0 +1,51 @@
+modules = ["bash"]
+
+[nix]
+channel = "stable-24_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "ShellScript"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "run_nextcloud_installer"
+
+[[workflows.workflow]]
+name = "ShellScript"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "bash instalar_nextcloud.sh"
+
+[[workflows.workflow]]
+name = "run_nextcloud_installer"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "bash instalar_nextcloud.sh"
+
+[deployment]
+run = ["sh", "-c", "bash instalar_nextcloud.sh"]
